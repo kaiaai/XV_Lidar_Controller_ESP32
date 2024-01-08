@@ -4,7 +4,7 @@
 - Supports Xiaomi 1st-gen LDS002RR
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=gaDnZ4Msw0E" target="_blank">
- <img src="http://img.youtube.com/vi/gaDnZ4Msw0E/maxresdefault.jpg" alt="Watch the operation video" width="1280" height="720" border="10" />
+ <img src="http://img.youtube.com/vi/gaDnZ4Msw0E/maxresdefault.jpg" alt="Watch the operation video" width="640" height="360" border="10" />
 </a>
 
 ***
