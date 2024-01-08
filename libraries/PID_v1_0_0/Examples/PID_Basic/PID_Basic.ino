@@ -3,7 +3,7 @@
  * Reading analog input 0 to control analog PWM output 3
  ********************************************************/
 
-#include <PID.h>
+#include <PID_v1_0_0.h>
 
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;

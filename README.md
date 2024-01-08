@@ -1,5 +1,14 @@
-XV Lidar Controller
-===================
+# XV Lidar Controller for ESP32
+
+- Adapted to work with ESP32 Dev Module by makerspet.com
+- Supports Xiaomi 1st-gen LDS002RR
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=gaDnZ4Msw0E" target="_blank">
+ <img src="http://img.youtube.com/vi/gaDnZ4Msw0E/maxresdefault.jpg" alt="Watch the operation video" width="1280" height="720" border="10" />
+</a>
+
+***
+
 Copyright 2014-2021 James LeRoy getSurreal.com
 
 v1.4.1

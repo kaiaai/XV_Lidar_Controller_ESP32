@@ -1,3 +1,6 @@
+// Adapted to work with ESP32 Dev Module by makerspet.com
+// Video https://youtube.com/shorts/gaDnZ4Msw0E
+// Apache-2.0 License
 /*
   XV Lidar Controller v1.4.1
 
@@ -12,12 +15,14 @@
 
   The F() macro in the Serial statements tells the compiler to keep your strings in PROGMEM
 */
-#include <TimerThree.h>                   // used for ultrasonic PWM motor control
-#include <PID.h>
+//#include <TimerThree.h>                   // used for ultrasonic PWM motor control
+#include "PID_v1_0_0.h"
 #include <EEPROM.h>
 #include <EEPROMAnything.h>
 #include <SerialCommand.h>
 
+#define LDS_MOTOR_EN_PIN        19 // LDS enable pin
+#define LDS_MOTOR_PWM_CHANNEL 2
 const int N_ANGLES = 360;                // # of angles (0..359)
 const int SHOW_ALL_ANGLES = N_ANGLES;    // value means 'display all angle data, 0..359'
 
@@ -123,37 +128,29 @@ uint16_t startingAngle = 0;                      // the first scan angle (of gro
 SerialCommand sCmd;
 
 boolean ledState = LOW;
-
-#if defined(__AVR_ATmega32U4__) && defined(CORE_TEENSY)  // if Teensy 2.0
-const int ledPin = 11;
-
-#elif defined(__AVR_ATmega32U4__)  // if Leonardo (no LED for Pro Micro)
-const int ledPin = 13;
-
-#elif defined(__MK20DX256__)  // if Teensy 3.1
-const int ledPin = 13;
-
-#elif defined(__MKL26Z64__)  // if Teensy LC
-const int ledPin = 13;
-#endif
+const int ledPin = 2;
 
 // initialization (before 'loop')
 void setup() {
+//  digitalWrite(LDS_MOTOR_EN_PIN, HIGH);
+
   EEPROM_readAnything(0, xv_config);
   if ( xv_config.id != EEPROM_ID) { // verify EEPROM values have been initialized
     initEEPROM();
   }
-  pinMode(xv_config.motor_pwm_pin, OUTPUT);
-  Serial.begin(115200);                    // USB serial
-#if defined(__AVR_ATmega32U4__)
-  Serial1.begin(115200);                   // XV LDS data
-#elif defined(__MK20DX256__)               // if Teensy 3.1
-  Serial1.begin(115200);                   // XV LDS data
-#elif defined(__MKL26Z64__)                // if Teensy LC
-  Serial1.begin(115200);                   // XV LDS data
-#endif
 
-  Timer3.initialize(30);                           // set PWM frequency to 32.768kHz
+  //pinMode(xv_config.motor_pwm_pin, OUTPUT);
+  pinMode(LDS_MOTOR_EN_PIN, OUTPUT);
+  Serial.begin(115200);                    // USB serial
+
+  // HardwareSerial LdSerial(2); // TX 17, RX 16
+  const int SENSOR_TX = 17;
+  const int SENSOR_RX = 16;
+  Serial1.begin(115200, SERIAL_8N1, SENSOR_RX, SENSOR_TX); // XV LDS data
+
+  //Timer3.initialize(30);                           // set PWM frequency to 32.768kHz
+  ledcAttachPin(LDS_MOTOR_EN_PIN, LDS_MOTOR_PWM_CHANNEL);
+  ledcSetup(LDS_MOTOR_PWM_CHANNEL, 30000, 10); // 10 bit PWM resolution
 
   rpmPID.SetOutputLimits(xv_config.pwm_min, xv_config.pwm_max);
   rpmPID.SetSampleTime(xv_config.sample_time);
@@ -246,7 +243,8 @@ void loop() {
   if (xv_config.motor_enable) {
     rpmPID.Compute();
     if (pwm_val != pwm_last) {
-      Timer3.pwm(xv_config.motor_pwm_pin, pwm_val);  // replacement for analogWrite()
+      //Timer3.pwm(xv_config.motor_pwm_pin, pwm_val);  // replacement for analogWrite()
+      ledcWrite(LDS_MOTOR_PWM_CHANNEL, int(pwm_val));
       pwm_last = pwm_val;
     }
     motorCheck();
@@ -408,20 +406,9 @@ void initEEPROM() {
   xv_config.id = 0x07;
   strcpy(xv_config.version, "1.4.0");
 
-#if defined(__AVR_ATmega32U4__) && defined(CORE_TEENSY)  // if Teensy 2.0
-  xv_config.motor_pwm_pin = 9;  // pin connected N-Channel Mosfet
+  xv_config.motor_pwm_pin = LDS_MOTOR_EN_PIN;
 
-#elif defined(__AVR_ATmega32U4__)  // if Leonardo or Pro Micro
-  xv_config.motor_pwm_pin = 5;  // pin connected N-Channel Mosfet
-
-#elif defined(__MK20DX256__)  // if Teensy 3.1
-  xv_config.motor_pwm_pin = 33;  // pin connected N-Channel Mosfet
-
-#elif defined(__MKL26Z64__)  // if Teensy LC
-  xv_config.motor_pwm_pin = 4;  // pin connected N-Channel Mosfet
-#endif
-
-  xv_config.rpm_setpoint = 200;  // desired RPM
+  xv_config.rpm_setpoint = 300;  // desired RPM 1.8KHz/5FPS/360 = 1 deg resolution
   xv_config.rpm_min = 200;
   xv_config.rpm_max = 300;
   xv_config.pwm_min = 100;
@@ -684,14 +671,20 @@ void setAngle() {
 
 void motorOff() {
   xv_config.motor_enable = false;
-  Timer3.pwm(xv_config.motor_pwm_pin, 0);
+  //Timer3.pwm(xv_config.motor_pwm_pin, 0);
+  ledcWrite(LDS_MOTOR_PWM_CHANNEL, 0);
+  //digitalWrite(LDS_MOTOR_EN_PIN, LOW);
+
   Serial.println(F(" "));
   Serial.println(F("Motor off"));
 }
 
 void motorOn() {
   xv_config.motor_enable = true;
-  Timer3.pwm(xv_config.motor_pwm_pin, pwm_val);
+  //Timer3.pwm(xv_config.motor_pwm_pin, pwm_val);
+  ledcWrite(LDS_MOTOR_PWM_CHANNEL, int(pwm_val));
+  //digitalWrite(LDS_MOTOR_EN_PIN, HIGH);
+
   rpm_err = 0;  // reset rpm error
   Serial.println(F(" "));
   Serial.println(F("Motor on"));
@@ -1019,4 +1012,3 @@ void saveConfig() {
   EEPROM_writeAnything(0, xv_config);
   Serial.println(F("Config Saved."));
 }
-
