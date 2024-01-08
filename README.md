@@ -1,6 +1,6 @@
 # XV Lidar Controller for ESP32
 
-- Adapted to work with ESP32 Dev Module by makerspet.com
+- Adapted to work with ESP32 Dev Module by [makerspet.com](https://makerspet.com)
 - Supports Xiaomi 1st-gen LDS002RR
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=gaDnZ4Msw0E" target="_blank">
